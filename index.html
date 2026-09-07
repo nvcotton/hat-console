@@ -1,0 +1,470 @@
+<title>HAT01コンソール</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#14181c">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef1f4;
+    --panel: #ffffff;
+    --panel-2: #f5f7f9;
+    --line: #d9dee3;
+    --ink: #1b1f23;
+    --ink-dim: #5b6470;
+    --accent: #ea5e0b;
+    --accent-ink: #ffffff;
+    --ok: #17915f;
+    --warn: #b8720a;
+    --crit: #c8402f;
+    --idle: #6b7280;
+    --feed-bg: #10141a;
+    --feed-ink: #d7dee2;
+    --feed-ink-dim: #6b7680;
+    --feed-line: #232a31;
+    --radius: 3px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181c;
+      --panel: #1b2025;
+      --panel-2: #20262c;
+      --line: #2b3138;
+      --ink: #e7eaee;
+      --ink-dim: #9aa3ad;
+      --accent: #ff8a3d;
+      --accent-ink: #14181c;
+      --ok: #34c98a;
+      --warn: #f0a93b;
+      --crit: #f16565;
+      --idle: #9aa3ad;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181c;
+    --panel: #1b2025;
+    --panel-2: #20262c;
+    --line: #2b3138;
+    --ink: #e7eaee;
+    --ink-dim: #9aa3ad;
+    --accent: #ff8a3d;
+    --accent-ink: #14181c;
+    --ok: #34c98a;
+    --warn: #f0a93b;
+    --crit: #f16565;
+    --idle: #9aa3ad;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans JP', 'Hiragino Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hud { font-family: 'Rajdhani', 'IBM Plex Sans JP', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-mark {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+  }
+  .brand-sub { font-size: 0.72rem; color: var(--ink-dim); letter-spacing: 0.02em; }
+
+  .conn-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .conn-btn:active { transform: translateY(1px); }
+  .conn-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--idle);
+    flex-shrink: 0;
+  }
+  .conn-dot.connecting { background: var(--warn); animation: pulse 1.1s ease-in-out infinite; }
+  .conn-dot.on { background: var(--ok); }
+  .conn-dot.off { background: var(--crit); }
+  @media (prefers-reduced-motion: reduce) { .conn-dot.connecting { animation: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  main {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .panel-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 10px;
+  }
+  .panel-note {
+    margin: -4px 0 12px;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+  }
+
+  .state-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .state-pill {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: 0.03em;
+    padding: 2px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    color: var(--idle);
+  }
+  .state-pill[data-state="UNWORN"] { color: var(--idle); border-color: var(--idle); }
+  .state-pill[data-state="AWAIT_NOD"] { color: var(--warn); border-color: var(--warn); }
+  .state-pill[data-state="WORN"] { color: var(--ok); border-color: var(--ok); }
+  .state-detail { font-size: 0.8rem; color: var(--ink-dim); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .stat-tile { display: flex; flex-direction: column; }
+  .stat-value {
+    display: flex; align-items: baseline; gap: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 2.1rem;
+    line-height: 1;
+  }
+  .stat-unit { font-size: 0.8rem; color: var(--ink-dim); font-family: 'IBM Plex Sans JP', sans-serif; }
+  .stat-dir { margin-top: 6px; font-size: 0.78rem; color: var(--ink-dim); }
+  .stat-dir.active { color: var(--accent); font-weight: 600; }
+
+  .btn-col { display: flex; flex-direction: column; gap: 9px; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 9px; }
+  .btn {
+    font-family: 'IBM Plex Sans JP', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 13px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+    cursor: pointer;
+    min-height: 48px;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    flex: 1 1 auto;
+    background: var(--panel-2);
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .calib-status {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    min-height: 1.1em;
+  }
+  .calib-status.busy { color: var(--warn); font-weight: 600; }
+  .calib-status.done { color: var(--ok); font-weight: 600; }
+
+  .feed-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .feed {
+    background: var(--feed-bg);
+    border: 1px solid var(--feed-line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+  }
+  .feed-line { display: flex; gap: 8px; padding: 2px 0; color: var(--feed-ink); }
+  .feed-line .t { color: var(--feed-ink-dim); flex-shrink: 0; }
+  .feed-empty { color: var(--feed-ink-dim); }
+
+  footer.hint {
+    padding: 10px 16px 18px;
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark hud">HAT01</span>
+      <span class="brand-sub">ヘルメット装着センサー</span>
+    </div>
+    <button class="conn-btn" id="connectBtn" type="button">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connLabel">接続する</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="panel">
+      <p class="panel-label">装着状態</p>
+      <div class="state-row">
+        <span class="state-pill hud" id="statePill" data-state="">---</span>
+        <span class="state-detail" id="stateDetail">未接続</span>
+      </div>
+    </section>
+
+    <section class="stat-grid">
+      <div class="panel stat-tile">
+        <p class="panel-label">うなずき(上下)</p>
+        <div class="stat-value"><span id="nodCount">0</span><span class="stat-unit">回</span></div>
+        <div class="stat-dir" id="nodDir">検知なし</div>
+      </div>
+      <div class="panel stat-tile">
+        <p class="panel-label">首振り(左右)</p>
+        <div class="stat-value"><span id="shakeCount">0</span><span class="stat-unit">回</span></div>
+        <div class="stat-dir" id="shakeDir">検知なし</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <p class="panel-label">キャリブレーション</p>
+      <p class="panel-note">実行中はセンサー計測のため数秒間ブロックされ、Bluetooth接続が不安定になることがあります。</p>
+      <div class="btn-col">
+        <button class="btn" data-cmd="s" data-label="静止キャリブレーション" disabled>静止キャリブレーション開始</button>
+        <button class="btn" data-cmd="n" data-label="うなずきキャリブレーション" disabled>うなずきキャリブレーション開始</button>
+        <button class="btn" data-cmd="y" data-label="首振りキャリブレーション" disabled>首振りキャリブレーション開始</button>
+      </div>
+      <p class="calib-status" id="calibStatus"></p>
+    </section>
+
+    <section class="panel">
+      <p class="panel-label">音声テスト再生</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary" data-cmd="1" disabled>被りましたか？</button>
+        <button class="btn btn-secondary" data-cmd="2" disabled>装着確定音</button>
+        <button class="btn btn-secondary" data-cmd="3" disabled>脱いだ音</button>
+      </div>
+    </section>
+
+    <section class="panel feed-panel">
+      <p class="panel-label">イベントログ</p>
+      <div class="feed" id="feed"><div class="feed-empty">接続すると受信ログがここに表示されます</div></div>
+    </section>
+  </main>
+
+  <footer class="hint">Android Chromeで開いてください（Web Bluetoothが必要です）</footer>
+</div>
+
+<script>
+(function () {
+  const SERVICE_UUID = 'b8e06067-62ad-41ba-9231-206ae80ab551';
+  const LOG_CHAR_UUID = 'f897177b-aee8-4767-8ecc-cc694fd5fce0';
+  const CMD_CHAR_UUID = '6b1a1f0e-2af1-4a1c-9b8e-6b0a5a2b0a10';
+
+  const connectBtn = document.getElementById('connectBtn');
+  const connDot = document.getElementById('connDot');
+  const connLabel = document.getElementById('connLabel');
+  const statePill = document.getElementById('statePill');
+  const stateDetail = document.getElementById('stateDetail');
+  const nodCountEl = document.getElementById('nodCount');
+  const nodDirEl = document.getElementById('nodDir');
+  const shakeCountEl = document.getElementById('shakeCount');
+  const shakeDirEl = document.getElementById('shakeDir');
+  const calibStatusEl = document.getElementById('calibStatus');
+  const feedEl = document.getElementById('feed');
+  const cmdButtons = Array.from(document.querySelectorAll('.btn[data-cmd]'));
+
+  let device = null, cmdChar = null, connected = false, connecting = false;
+
+  function setCmdButtonsEnabled(enabled) {
+    cmdButtons.forEach(b => { b.disabled = !enabled; });
+  }
+
+  function setConnUI(status) {
+    // status: 'off' | 'connecting' | 'on'
+    connDot.className = 'conn-dot ' + status;
+    if (status === 'on') { connLabel.textContent = '切断する'; }
+    else if (status === 'connecting') { connLabel.textContent = '接続中...'; }
+    else { connLabel.textContent = '接続する'; }
+  }
+
+  function addFeedLine(text) {
+    if (feedEl.querySelector('.feed-empty')) feedEl.innerHTML = '';
+    const now = new Date();
+    const t = now.toLocaleTimeString('ja-JP', { hour12: false });
+    const line = document.createElement('div');
+    line.className = 'feed-line';
+    line.innerHTML = '<span class="t">' + t + '</span><span class="m"></span>';
+    line.querySelector('.m').textContent = text;
+    feedEl.prepend(line);
+    while (feedEl.children.length > 200) feedEl.removeChild(feedEl.lastChild);
+  }
+
+  function renderState(stateCode, detail) {
+    statePill.dataset.state = stateCode;
+    statePill.textContent = stateCode || '---';
+    stateDetail.textContent = detail || '';
+  }
+
+  function handleLogLine(line) {
+    addFeedLine(line);
+    let m;
+    if ((m = line.match(/^NOD (DOWN|UP) count=(\d+)/))) {
+      nodCountEl.textContent = m[2];
+      nodDirEl.textContent = (m[1] === 'DOWN' ? '↓ 下' : '↑ 上') + ' を検知';
+      nodDirEl.classList.add('active');
+      setTimeout(() => nodDirEl.classList.remove('active'), 1500);
+    } else if ((m = line.match(/^SHAKE (LEFT|RIGHT) count=(\d+)/))) {
+      shakeCountEl.textContent = m[2];
+      shakeDirEl.textContent = (m[1] === 'RIGHT' ? '→ 右' : '← 左') + ' を検知';
+      shakeDirEl.classList.add('active');
+      setTimeout(() => shakeDirEl.classList.remove('active'), 1500);
+    } else if ((m = line.match(/^STATE=([A-Z_]+)(?:\((\w+)\))?/))) {
+      const label = { UNWORN: '未装着', AWAIT_NOD: 'うなずき待ち', WORN: '装着中' }[m[1]] || '';
+      renderState(m[1], m[2] ? label + '（' + m[2] + '）' : label);
+    } else if ((m = line.match(/^CALIB_START:(\w+)/))) {
+      const names = { static: '静止', nod: 'うなずき', shake: '首振り' };
+      calibStatusEl.textContent = (names[m[1]] || m[1]) + 'キャリブレーション実行中...';
+      calibStatusEl.className = 'calib-status busy';
+      setCmdButtonsEnabled(false);
+    } else if ((m = line.match(/^CALIB_DONE:(\w+)/))) {
+      const names = { static: '静止', nod: 'うなずき', shake: '首振り' };
+      calibStatusEl.textContent = (names[m[1]] || m[1]) + 'キャリブレーション完了';
+      calibStatusEl.className = 'calib-status done';
+      setCmdButtonsEnabled(true);
+    }
+  }
+
+  function onDisconnected() {
+    connected = false;
+    cmdChar = null;
+    setConnUI('off');
+    setCmdButtonsEnabled(false);
+    addFeedLine('-- 切断されました --');
+  }
+
+  async function connectOnce() {
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    const logChar = await service.getCharacteristic(LOG_CHAR_UUID);
+    cmdChar = await service.getCharacteristic(CMD_CHAR_UUID);
+    await logChar.startNotifications();
+    logChar.addEventListener('characteristicvaluechanged', (ev) => {
+      const text = new TextDecoder().decode(ev.target.value);
+      handleLogLine(text);
+    });
+  }
+
+  async function connect() {
+    if (connecting || connected) return;
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [SERVICE_UUID] }]
+      });
+    } catch (err) {
+      return; // ユーザーがピッカーをキャンセルした場合など
+    }
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    connecting = true;
+    setConnUI('connecting');
+
+    // BTstackLib側が初回接続に失敗しやすいため、数回リトライする
+    const maxAttempts = 4;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await connectOnce();
+        connected = true;
+        connecting = false;
+        setConnUI('on');
+        setCmdButtonsEnabled(true);
+        addFeedLine('-- 接続しました --');
+        return;
+      } catch (err) {
+        addFeedLine('接続失敗(' + attempt + '/' + maxAttempts + ')。再試行します...');
+        try { device.gatt.disconnect(); } catch (e) {}
+        await new Promise(r => setTimeout(r, 900));
+      }
+    }
+    connecting = false;
+    setConnUI('off');
+    addFeedLine('-- 接続できませんでした。もう一度お試しください --');
+  }
+
+  function disconnect() {
+    if (device && device.gatt.connected) device.gatt.disconnect();
+    onDisconnected();
+  }
+
+  connectBtn.addEventListener('click', () => {
+    if (connected) disconnect();
+    else connect();
+  });
+
+  cmdButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!cmdChar) return;
+      const code = btn.dataset.cmd;
+      try {
+        await cmdChar.writeValue(new Uint8Array([code.charCodeAt(0)]));
+        addFeedLine('> コマンド送信: ' + (btn.dataset.label || btn.textContent));
+      } catch (err) {
+        addFeedLine('!! コマンド送信に失敗しました');
+      }
+    });
+  });
+
+  if (!navigator.bluetooth) {
+    addFeedLine('!! このブラウザはWeb Bluetoothに対応していません（Android版Chromeで開いてください）');
+    connectBtn.disabled = true;
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>

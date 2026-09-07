@@ -1,4 +1,4 @@
-const CACHE = 'hat01-console-v1';
+const CACHE = 'hat01-console-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -14,8 +14,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // アプリの見た目(HTML/CSS/JS/アイコン)だけキャッシュ。BLE通信はキャッシュ対象外(そもそも該当しない)。
+  // ネットワーク優先: まず最新を取りに行き、取得できない(オフライン)時だけキャッシュを使う。
+  // (cache-firstだと更新後もずっと古い版が表示され続けてしまうため)
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

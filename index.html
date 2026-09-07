@@ -402,7 +402,10 @@
     if (connecting || connected) return;
     try {
       device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }]
+        // BTstackLib側のアドバタイズにサービスUUIDが含まれていないため、名前で絞り込む
+        // (GATT接続後にサービスへアクセスできるよう optionalServices に明示しておく)
+        filters: [{ namePrefix: 'HAT01' }],
+        optionalServices: [SERVICE_UUID]
       });
     } catch (err) {
       return; // ユーザーがピッカーをキャンセルした場合など
